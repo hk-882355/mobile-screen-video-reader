@@ -28,6 +28,7 @@ Claude/Codex workflows.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -e .
 
 mobile-screen-video-reader \
