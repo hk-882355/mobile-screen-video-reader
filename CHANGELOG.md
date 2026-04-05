@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.1.8
+
+- Improve PyPI manual-release guidance in README to match workflow secret naming (`PYPI_API_TOKEN`)
+- Clarify manual dispatch behavior and publish toggle in release workflow docs
+
 # 0.1.7
 
 - Move implementation into package module (`mobile_screen_video_reader.app`) so
