@@ -397,7 +397,7 @@ def write_artifacts(
 
     manifest = {
         "version": 1,
-        "created_at": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "created_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "video": {
             "path": str(video_path),
             "filename": video_path.name,
