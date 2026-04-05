@@ -10,6 +10,7 @@ Claude/Codex workflows.
 - Extract still frames from a video with fixed-frame (`every`) or fixed-interval
   (`interval`) sampling
 - Extract scene-change frames (`scene`) for rough activity summary
+- Add UI-diff mode (`diff`) to focus on likely UI transition points
 - Generate:
   - `manifest.json` (metadata + extracted frame list)
   - `frames.jsonl` (line-based frame index)
@@ -42,8 +43,9 @@ mobile-screen-video-reader \
 
 ```text
 usage: mobile-screen-video-reader [video] [--output-dir OUTPUT_DIR]
-  [--mode {every,interval,scene}] [--fps FPS] [--interval INTERVAL]
-  [--scene-threshold SCENE_THRESHOLD] [--max-width MAX_WIDTH]
+  [--mode {every,interval,scene,diff}] [--fps FPS] [--interval INTERVAL]
+  [--scene-threshold SCENE_THRESHOLD] [--diff-threshold DIFF_THRESHOLD]
+  [--diff-interval DIFF_INTERVAL] [--max-width MAX_WIDTH]
   [--max-frames MAX_FRAMES] [--image-format {jpg,png}] [--quality QUALITY]
   [--transcribe] [--keep-audio] [--model MODEL] [--lang LANG]
 ```

@@ -30,10 +30,40 @@ class TestMobileScreenVideoReader(unittest.TestCase):
         self.assertEqual(module.to_fraction("0.5"), 0.5)
 
     def test_build_video_filter_scene_mode(self) -> None:
-        args = type("Args", (), {"mode": "scene", "fps": 1.0, "interval": 2.0, "scene_threshold": 0.05, "max_width": 768})()
+        args = type(
+            "Args",
+            (),
+            {
+                "mode": "scene",
+                "fps": 1.0,
+                "interval": 2.0,
+                "scene_threshold": 0.05,
+                "diff_threshold": 0.06,
+                "diff_interval": 0.5,
+                "max_width": 768,
+            },
+        )()
         vf = module.build_video_filter(args)
         self.assertIn("select='gt(scene,0.05)'", vf)
         self.assertIn("scale=min(768,iw):-2", vf)
+
+    def test_build_video_filter_diff_mode(self) -> None:
+        args = type(
+            "Args",
+            (),
+            {
+                "mode": "diff",
+                "fps": 1.0,
+                "interval": 2.0,
+                "scene_threshold": 0.04,
+                "diff_threshold": 0.08,
+                "diff_interval": 0.75,
+                "max_width": 768,
+            },
+        )()
+        vf = module.build_video_filter(args)
+        self.assertIn("fps=1/0.75", vf)
+        self.assertIn("select='gt(scene,0.08)'", vf)
 
 
 if __name__ == "__main__":

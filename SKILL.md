@@ -22,9 +22,15 @@ UI review package for AI, instead of manually inspecting a long video.
 ## Default behavior
 
 1. Build a timestamped output folder under the configured output directory.
-2. Extract one frame per second by default (`--mode every --fps 1`).
+2. Extract by selected mode:
+   - `every`: every second by default (`--mode every --fps 1`)
+   - `interval`: fixed interval (`--mode interval --interval 2`)
+   - `scene`: scene transitions (`--mode scene`)
+   - `diff`: UI-diff focused transitions (`--mode diff --diff-threshold ...`)
 3. Emit a manifest with frame paths.
-4. If transcription is requested, extract audio and call OpenAI Audio API if
+4. In `--mode diff`, tune `--diff-threshold` (sensitivity) and
+   `--diff-interval` (sampling interval before diff detection).
+5. If transcription is requested, extract audio and call OpenAI Audio API if
    `OPENAI_API_KEY` is available.
 
 ## Workflow
@@ -33,9 +39,9 @@ UI review package for AI, instead of manually inspecting a long video.
 python3 scripts/mobile_screen_video_reader.py \
   /path/to/recording.mp4 \
   --output-dir output \
-  --mode interval \
-  --interval 2 \
-  --transcribe
+  --mode diff \
+  --diff-interval 0.5 \
+  --diff-threshold 0.06
 ```
 
 ## Error handling

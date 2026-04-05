@@ -36,9 +36,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=("every", "interval", "scene"),
+        choices=("every", "interval", "scene", "diff"),
         default="every",
-        help="every: fixed fps, interval: fixed seconds, scene: scene change based",
+        help="every: fixed fps, interval: fixed seconds, scene/diff: scene change based",
     )
     parser.add_argument(
         "--fps",
@@ -57,6 +57,18 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.04,
         help="Scene change sensitivity when mode=scene",
+    )
+    parser.add_argument(
+        "--diff-threshold",
+        type=float,
+        default=0.06,
+        help="UI-diff sensitivity when mode=diff (higher is less sensitive)",
+    )
+    parser.add_argument(
+        "--diff-interval",
+        type=float,
+        default=0.5,
+        help="Sampling interval in seconds before diff filtering. Only for mode=diff",
     )
     parser.add_argument(
         "--max-width",
@@ -163,8 +175,13 @@ def build_video_filter(args: argparse.Namespace) -> str:
     elif args.mode == "interval":
         interval = max(args.interval, 0.1)
         parts.append(f"fps=1/{interval}")
-    else:
+    elif args.mode == "scene":
         th = max(0.01, min(1.0, args.scene_threshold))
+        parts.append(f"select='gt(scene,{th})'")
+    else:
+        interval = max(0.1, args.diff_interval)
+        th = max(0.01, min(1.0, args.diff_threshold))
+        parts.append(f"fps=1/{interval}")
         parts.append(f"select='gt(scene,{th})'")
 
     parts.append(f"scale=min({max_width},iw):-2")
@@ -181,6 +198,10 @@ def timestamp_list(metadata: Dict[str, Any], mode: str, args: argparse.Namespace
         return [round(i * interval, 3) for i in range(count)]
     if mode == "interval":
         interval = max(args.interval, 0.1)
+        count = int(duration / interval) + 1
+        return [round(i * interval, 3) for i in range(count)]
+    if mode == "diff":
+        interval = max(0.1, args.diff_interval)
         count = int(duration / interval) + 1
         return [round(i * interval, 3) for i in range(count)]
     return ()
@@ -300,7 +321,7 @@ def write_artifacts(
             "file": str(frame.relative_to(output_dir)),
             "frame": frame.name,
         }
-        if args.mode in ("every", "interval"):
+        if args.mode in ("every", "interval", "diff"):
             row["timestamp_sec"] = next(ts_iter, None)
         frame_rows.append(row)
 
@@ -317,6 +338,8 @@ def write_artifacts(
             "fps": args.fps,
             "interval": args.interval,
             "scene_threshold": args.scene_threshold,
+            "diff_threshold": args.diff_threshold,
+            "diff_interval": args.diff_interval,
             "max_width": args.max_width,
             "max_frames": args.max_frames,
             "image_format": args.image_format,
@@ -408,7 +431,7 @@ def main() -> int:
     metadata = ffprobe_video_metadata(video_path)
 
     frames = extract_frames(video_path, output_dir, args)
-    timestamps = list(timestamp_list(metadata, args.mode, args)) if args.mode in ("every", "interval") else []
+    timestamps = list(timestamp_list(metadata, args.mode, args)) if args.mode in ("every", "interval", "diff") else []
 
     transcript = None
     audio_path = None
