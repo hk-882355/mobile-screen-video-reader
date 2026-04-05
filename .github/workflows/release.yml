@@ -51,11 +51,16 @@ jobs:
 
       - name: Publish to PyPI (API token fallback)
         id: publish_api
-        if: ${{ (github.event_name == 'push' || github.event.inputs.publish == 'true') && steps.publish_trusted.outcome == 'failure' && secrets.PYPI_API_TOKEN != '' }}
+        if: ${{ (github.event_name == 'push' || github.event.inputs.publish == 'true') && steps.publish_trusted.outcome == 'failure' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
+          if [ -z "${TWINE_PASSWORD}" ]; then
+            echo "PYPI_API_TOKEN is not configured."
+            echo "Skip token fallback publish and let the failure handler decide next step."
+            exit 1
+          fi
           python -m twine upload --non-interactive dist/*
 
       - name: Publish to PyPI (failed)
