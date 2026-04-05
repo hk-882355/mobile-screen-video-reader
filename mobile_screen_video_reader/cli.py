@@ -1,16 +1,14 @@
-"""Package entrypoint wrapper for the script-based implementation."""
+"""Package entrypoint wrapper for the packaged implementation."""
 
 from __future__ import annotations
 
-import pathlib
-import runpy
 import sys
+
+from mobile_screen_video_reader.app import main as app_main
 
 
 def main() -> int:
-    script = pathlib.Path(__file__).resolve().parent.parent / "scripts" / "mobile_screen_video_reader.py"
-    namespace = runpy.run_path(str(script))
-    return int(namespace["main"]())
+    return int(app_main())
 
 
 if __name__ == "__main__":

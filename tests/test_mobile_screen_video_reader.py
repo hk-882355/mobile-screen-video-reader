@@ -8,7 +8,7 @@ import tempfile
 
 
 def load_script_module() -> ModuleType:
-    path = Path(__file__).resolve().parents[1] / "scripts" / "mobile_screen_video_reader.py"
+    path = Path(__file__).resolve().parents[1] / "mobile_screen_video_reader" / "app.py"
     spec = importlib.util.spec_from_file_location("msvr", path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Cannot load script module from {path}")

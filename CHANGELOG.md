@@ -1,5 +1,12 @@
 # Changelog
 
+# 0.1.7
+
+- Move implementation into package module (`mobile_screen_video_reader.app`) so
+  non-editable installs can run the console script correctly.
+- Keep `scripts/mobile_screen_video_reader.py` as a compatibility wrapper.
+- Update tests to target packaged app module for import stability.
+
 ## 0.1.6
 
 - Add `--review-prompt` as the preferred prompt filename option for sequence review mode.
@@ -13,4 +20,3 @@
 - Add mode validation and basic metadata checks.
 - Improve extraction and transcription behavior for CLI usage.
 - Add default prompt output (`codex_review_prompt.md`) and sequence-style prompt path configuration.
-
