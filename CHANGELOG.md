@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.1.10
+
+- Fix release test expectation for escaped ffmpeg scale filter syntax (`scale=min(768\\,iw):-2`) in scene mode.
+
 # 0.1.9
 
 - Update `frame_review_prompt.md` to instruct the user model to read absolute frame paths directly after skill completion, removing manual path re-submit friction.

@@ -46,7 +46,7 @@ class TestMobileScreenVideoReader(unittest.TestCase):
         )()
         vf = module.build_video_filter(args)
         self.assertIn("select='gt(scene,0.05)'", vf)
-        self.assertIn("scale=min(768,iw):-2", vf)
+        self.assertIn(r"scale=min(768\,iw):-2", vf)
 
     def test_build_video_filter_diff_mode(self) -> None:
         args = type(

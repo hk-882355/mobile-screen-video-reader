@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-screen-video-reader"
-version = "0.1.9"
+version = "0.1.10"
 description = "Extract frames from mobile screen recordings for AI review"
 authors = [{ name = "hk-882355" }]
 readme = "README.md"
