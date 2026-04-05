@@ -37,6 +37,8 @@ video.
 5. In `--mode mimic`, automatically add `flow.jsonl` + `codex_mimic_prompt.md` for quick imitation workflow.
 6. If transcription is requested, extract audio and call OpenAI Audio API if
    `OPENAI_API_KEY` is available.
+7. Optional: set `--max-duration` to guard against accidentally long recordings.
+8. Optional: set `--mimic-prompt` to customize the generated prompt filename.
 
 ## Workflow
 
@@ -62,3 +64,4 @@ python3 scripts/mobile_screen_video_reader.py \
   seconds is enough.
 - Prefer `--mode mimic` when the goal is to recreate a UI flow and preserve
   transition order.
+- Guard against too-long videos with `--max-duration` when batch ingesting.

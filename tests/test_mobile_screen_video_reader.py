@@ -108,5 +108,41 @@ class TestMobileScreenVideoReader(unittest.TestCase):
         self.assertIn("flow.jsonl", prompt)
         self.assertIn("timeline", prompt.lower())
 
+    def test_resolve_mimic_prompt_path(self) -> None:
+        output_dir = Path("/tmp/out")
+        out = module.resolve_mimic_prompt_path(output_dir=output_dir, prompt_name="ui_replay_prompt.md")
+        self.assertEqual(str(out), str(output_dir / "ui_replay_prompt.md"))
+
+    def test_resolve_mimic_prompt_path_rejects_parent(self) -> None:
+        output_dir = Path("/tmp/out")
+        with self.assertRaises(ValueError):
+            module.resolve_mimic_prompt_path(output_dir=output_dir, prompt_name="../evil.md")
+
+    def test_validate_video_metadata(self) -> None:
+        metadata = {"duration": 90.0, "width": 1080, "height": 1920}
+        args = type(
+            "Args",
+            (),
+            {
+                "max_duration": 120.0,
+                "min_duration": 10.0,
+            },
+        )()
+        warnings = module.validate_video_metadata(metadata=metadata, args=args)
+        self.assertEqual(warnings, [])
+
+    def test_validate_video_metadata_rejects_too_long(self) -> None:
+        metadata = {"duration": 600.0, "width": 1080, "height": 1920}
+        args = type(
+            "Args",
+            (),
+            {
+                "max_duration": 120.0,
+                "min_duration": 0.0,
+            },
+        )()
+        with self.assertRaises(RuntimeError):
+            module.validate_video_metadata(metadata=metadata, args=args)
+
 if __name__ == "__main__":
     unittest.main()

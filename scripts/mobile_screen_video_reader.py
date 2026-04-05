@@ -71,6 +71,18 @@ def parse_args() -> argparse.Namespace:
         help="Sampling interval in seconds before diff filtering. Used for mode=diff and mimic",
     )
     parser.add_argument(
+        "--max-duration",
+        type=float,
+        default=0.0,
+        help="Reject videos longer than this many seconds (0 means no limit)",
+    )
+    parser.add_argument(
+        "--min-duration",
+        type=float,
+        default=0.0,
+        help="Warn for videos shorter than this many seconds (0 means no warning)",
+    )
+    parser.add_argument(
         "--max-width",
         type=int,
         default=768,
@@ -113,6 +125,11 @@ def parse_args() -> argparse.Namespace:
         "--lang",
         default=None,
         help="Optional language hint for transcription (e.g. ja)",
+    )
+    parser.add_argument(
+        "--mimic-prompt",
+        default="codex_mimic_prompt.md",
+        help="Mimic mode prompt output filename (written under output folder)",
     )
     return parser.parse_args()
 
@@ -164,6 +181,37 @@ def ffprobe_video_metadata(path: Path) -> Dict[str, Any]:
         "duration": duration,
         "frames": nb_frames,
     }
+
+
+def resolve_mimic_prompt_path(output_dir: Path, prompt_name: str) -> Path:
+    prompt_path = Path(prompt_name)
+    if prompt_path.is_absolute() or ".." in prompt_path.parts:
+        raise ValueError("mimic prompt path must be a file name relative to the output folder")
+    if not prompt_path.suffix:
+        prompt_path = prompt_path.with_suffix(".md")
+    return output_dir / prompt_path
+
+
+def validate_video_metadata(metadata: Dict[str, Any], args: argparse.Namespace) -> List[str]:
+    warnings = []
+    duration = float(metadata.get("duration", 0.0))
+    if duration <= 0:
+        raise RuntimeError("Could not determine video duration. Please check FFmpeg input.")
+    if args.max_duration and duration > args.max_duration:
+        raise RuntimeError(
+            f"Video is too long: {duration:.2f}s. "
+            f"Use --max-duration {args.max_duration} to adjust threshold."
+        )
+    if args.min_duration and duration < args.min_duration:
+        warnings.append(f"Short video: {duration:.2f}s. Some transitions may be missing.")
+
+    width = int(metadata.get("width", 0))
+    height = int(metadata.get("height", 0))
+    if width <= 0 or height <= 0:
+        raise RuntimeError(f"Could not determine frame size from this video: {width}x{height}")
+    if width < 360 or height < 360:
+        warnings.append(f"Low resolution detected: {width}x{height}. Results may be noisy.")
+    return warnings
 
 
 def build_video_filter(args: argparse.Namespace) -> str:
@@ -375,12 +423,12 @@ def write_artifacts(
             "\n".join(json.dumps(row, ensure_ascii=False) for row in flow_rows),
             encoding="utf-8",
         )
+        prompt_path = resolve_mimic_prompt_path(output_dir=output_dir, prompt_name=args.mimic_prompt)
+        prompt_rel = str(prompt_path.relative_to(output_dir))
         manifest["mimic"] = {
             "flow_path": "flow.jsonl",
-            "prompt_path": "codex_mimic_prompt.md",
+            "prompt_path": prompt_rel,
         }
-
-        prompt_path = output_dir / "codex_mimic_prompt.md"
         prompt_path.write_text(
             build_mimic_prompt(video_path=video_path, flow_rows=flow_rows),
             encoding="utf-8",
@@ -498,6 +546,8 @@ def main() -> int:
 
     output_dir = build_output_dir(video_path, output_root)
     metadata = ffprobe_video_metadata(video_path)
+    for warn in validate_video_metadata(metadata, args):
+        print(f"warning: {warn}")
 
     frames = extract_frames(video_path, output_dir, args)
     timestamps = list(timestamp_list(metadata, args.mode, args)) if args.mode in ("every", "interval", "diff", "mimic") else []

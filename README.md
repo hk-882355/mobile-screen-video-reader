@@ -65,6 +65,26 @@ mobile-screen-video-reader \
 
 `mimic` uses the `diff` pipeline with preset-friendly defaults for fast flow-first review.
 
+### Recommended for copy flow
+
+```bash
+OUT_DIR=./output
+video=/path/to/screen-recording.mp4
+mobile-screen-video-reader \
+  "$video" \
+  --output-dir "$OUT_DIR" \
+  --mode mimic \
+  --max-duration 600 \
+  --mimic-prompt replay_prompt.md
+
+echo "この動画のUIフローを再現してください"
+echo "ファイル: ${OUT_DIR}/"
+```
+
+Suggested next step:
+- Attach generated files under `${OUT_DIR}/<run-folder>/` into Claude/Codex context
+- Start with `${OUT_DIR}/.../replay_prompt.md` then continue with `frames/` files and `flow.jsonl`
+
 ## Example output
 
 ```text
