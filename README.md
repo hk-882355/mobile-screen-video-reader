@@ -28,19 +28,43 @@ Claude/Codex workflows.
 - FFmpeg and ffprobe
 - Optional: `openai` package and `OPENAI_API_KEY` for transcription
 
-## Install and use (local repo)
+## Install and use
+
+### Install from PyPI
+
+```bash
+pip install mobile-screen-video-reader
+```
+
+### Install from local repo
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -e .
-
 mobile-screen-video-reader \
   /path/to/screen-recording.mp4 \
   --output-dir ./output \
   --mode interval \
   --interval 2
+```
+
+## Release flow
+
+GitHub Actions publishes package artifacts automatically when a `v*` tag is pushed:
+
+- `python -m build` generates distribution files
+- `twine check` validates artifacts
+- publishes to PyPI via trusted publishing
+- attaches `dist/*` artifacts to a GitHub release
+
+If you need manual publish, use:
+
+```bash
+TWINE_API_TOKEN=... # PyPI API token
+python -m pip install -q twine
+python -m twine upload -u __token__ -p "$TWINE_API_TOKEN" dist/*
 ```
 
 ### Available options
