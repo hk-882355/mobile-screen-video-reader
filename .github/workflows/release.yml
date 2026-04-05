@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Run PyPI publish and release asset upload"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -38,9 +44,11 @@ jobs:
           python -m twine check dist/*
 
       - name: Publish to PyPI
+        if: ${{ github.event_name == 'push' || github.event.inputs.publish == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Publish release assets
+        if: ${{ github.event_name == 'push' || github.event.inputs.publish == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
