@@ -33,6 +33,7 @@ Claude/Codex workflows.
 ### Install from PyPI
 
 ```bash
+# (PyPI 公開後に有効)
 pip install mobile-screen-video-reader
 ```
 
@@ -62,9 +63,9 @@ GitHub Actions publishes package artifacts automatically when a `v*` tag is push
 If you need manual publish, use:
 
 ```bash
-TWINE_API_TOKEN=... # PyPI API token
+PYPI_API_TOKEN=... # PyPI API token
 python -m pip install -q twine
-python -m twine upload -u __token__ -p "$TWINE_API_TOKEN" dist/*
+python -m twine upload -u __token__ -p "$PYPI_API_TOKEN" dist/*
 ```
 
 ### Trusted publishing setup
@@ -84,6 +85,8 @@ Then rerun:
 ```bash
 gh workflow run Release --ref main --field publish=true
 ```
+
+For manual dispatch publishing, pass `publish=true` explicitly.
 
 or push a new `v*` tag to trigger the same path automatically.
 
