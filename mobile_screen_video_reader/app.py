@@ -138,6 +138,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Deprecated alias for --review-prompt.",
     )
+    parser.add_argument(
+        "--frames-only",
+        action="store_true",
+        help="Write extracted frames only, then generate `frame_review_prompt.md`.",
+    )
     return parser.parse_args()
 
 
@@ -254,7 +259,7 @@ def build_video_filter(args: argparse.Namespace) -> str:
         parts.append(f"fps=1/{interval}")
         parts.append(f"select='gt(scene,{th})'")
 
-    parts.append(f"scale=min({max_width},iw):-2")
+    parts.append(f"scale=min({max_width}\\,iw):-2")
     return ", ".join(parts)
 
 
@@ -372,6 +377,33 @@ def transcribe_audio(audio_path: Path, model: str, lang: Optional[str]) -> Dict[
     if isinstance(response, dict):
         return response
     return dict(response)
+
+
+def write_frame_review_prompt(output_dir: Path, video_path: Path, frames: List[Path]) -> Path:
+    handoff_path = output_dir / "frame_review_prompt.md"
+    lines = [
+        "# Frame review handoff",
+        "",
+        "I extracted still frames from the screen recording.",
+        f"- Source: `{video_path}`",
+        f"- Frame count: {len(frames)}",
+        "",
+        "Please read the following absolute frame paths directly in order (the model you are using should access local images by these paths):",
+        "",
+    ]
+    for index, frame in enumerate(sorted(frames), start=1):
+        lines.append(f"- {index}. {frame.resolve()}")
+
+    lines.extend(
+        [
+            "",
+            "Final instruction for the model:",
+            "",
+            "> このフレーム群の順番を追って、画面の状態遷移・見えているUI要素・ユーザー操作の推定を時系列で要約してください。",
+        ]
+    )
+    handoff_path.write_text("\n".join(lines), encoding="utf-8")
+    return handoff_path
 
 
 def write_artifacts(
@@ -501,6 +533,13 @@ def write_artifacts(
         report.append(transcript.get("text", ""))
         report.append("```")
 
+    report.extend([
+        "",
+        "## LLM handoff",
+        "",
+        "- `frame_review_prompt.md`",
+    ])
+
     (output_dir / "report.md").write_text("\n".join(report), encoding="utf-8")
 
     return manifest
@@ -591,8 +630,17 @@ def main() -> int:
             try:
                 transcript = transcribe_audio(audio_path, args.model, args.lang)
             except Exception as error:
-                print(f"Transcription skipped: {error}")
+                print("Transcription skipped: unable to call OpenAI API (check OPENAI_API_KEY and model/network).")
                 transcript = None
+
+    if args.frames_only:
+        if audio_path and not args.keep_audio:
+            audio_path.unlink(missing_ok=True)
+        review_prompt = write_frame_review_prompt(output_dir, video_path, frames)
+        print(f"LLM handoff file: {review_prompt}")
+        print(f"Frames: {len(frames)}")
+        print(f"Output directory: {output_dir}")
+        return 0
 
     manifest = write_artifacts(
         output_dir=output_dir,
@@ -606,9 +654,11 @@ def main() -> int:
 
     if audio_path and not args.keep_audio:
         audio_path.unlink(missing_ok=True)
+    review_prompt = write_frame_review_prompt(output_dir, video_path, frames)
 
     print(f"Wrote: {output_dir / 'manifest.json'}")
     print(f"Frames: {manifest['stats']['frame_count']}")
+    print(f"LLM handoff file: {review_prompt}")
     return 0
 
 

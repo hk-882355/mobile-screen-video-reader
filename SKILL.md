@@ -12,6 +12,7 @@ description: "Convert smartphone screen-recording videos into keyframes and opti
 - `manifest.json`
   - `frames.jsonl`
   - `report.md`
+  - `frame_review_prompt.md` (absolute frame paths + instruction for the model to read them)
   - `flow.jsonl` (sequence review mode)
   - `codex_review_prompt.md` (or custom name via `--review-prompt`)
   - `transcript.json` (only when transcription is enabled)
@@ -39,6 +40,7 @@ recorded video frame-by-frame.
    `OPENAI_API_KEY` is available.
 7. Optional: set `--max-duration` to guard against accidentally long recordings.
 8. Optional: set `--review-prompt` (or legacy `--mimic-prompt`) to customize the generated prompt filename.
+9. Optional: add `--frames-only` when you only want frame assets + LLM handoff, without manifest/report/flow artifacts.
 
 ## Workflow
 
@@ -50,6 +52,20 @@ python3 scripts/mobile_screen_video_reader.py \
   --diff-interval 0.5 \
   --diff-threshold 0.06
 ```
+
+## Frame-only + LLM handoff (recommended for this skill)
+
+```bash
+python3 mobile_screen_video_reader/app.py \
+  /path/to/recording.mp4 \
+  --frames-only \
+  --max-frames 12 \
+  --output-dir output
+```
+
+This emits:
+- `frames/frame_*.jpg` (or `.png`)
+- `frame_review_prompt.md`
 
 ## Error handling
 

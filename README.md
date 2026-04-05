@@ -3,6 +3,12 @@
 Extract frames from smartphone screen recordings and prepare them for AI review in
 Claude/Codex workflows.
 
+Now on PyPI:
+
+```bash
+pip install mobile-screen-video-reader
+```
+
 ![Status](https://img.shields.io/badge/status-oss-green)
 
 ## Features
@@ -33,7 +39,6 @@ Claude/Codex workflows.
 ### Install from PyPI
 
 ```bash
-# (PyPI 公開後に有効)
 pip install mobile-screen-video-reader
 ```
 
@@ -112,6 +117,7 @@ usage: mobile-screen-video-reader [video] [--output-dir OUTPUT_DIR]
   [--max-frames MAX_FRAMES] [--image-format {jpg,png}] [--quality QUALITY]
   [--transcribe] [--keep-audio] [--model MODEL] [--lang LANG]
   [--review-prompt REVIEW_PROMPT] [--mimic-prompt MIMIC_PROMPT]
+  [--frames-only]
 ```
 
 ### Sequence reading preset
@@ -140,12 +146,26 @@ mobile-screen-video-reader \
 echo "この画面録画のフレームとタイムラインをAIに渡して要約してください"
 ```
 
+### Frame-only + LLM handoff
+
+```bash
+mobile-screen-video-reader \
+  /path/to/recording.mp4 \
+  --frames-only \
+  --mode interval \
+  --interval 2 \
+  --max-frames 12 \
+  --output-dir ./output
+```
+
+This extracts frames and writes `frame_review_prompt.md` (absolute frame paths + final instruction for the model to read them directly) in the output folder.
+
 `--mimic-prompt` is kept for backward compatibility and maps to
 `--review-prompt`.
 
 Suggested next step:
-- Attach generated files under `${OUT_DIR}/<run-folder>/` into Claude/Codex context
-- Start with `${OUT_DIR}/.../review_timeline_prompt.md`, then reference `frames/` and `flow.jsonl`
+- Open `${OUT_DIR}/.../frame_review_prompt.md` in Claude/Codex context.
+- The model should read the listed absolute image paths itself and summarize UI flow.
 
 ## Example output
 
@@ -158,6 +178,7 @@ output/
       ...
     manifest.json
     frames.jsonl
+    frame_review_prompt.md
     flow.jsonl (mimic mode)
     codex_review_prompt.md (mimic mode)
     report.md
@@ -167,8 +188,10 @@ output/
 ## Install as a Codex skill
 
 - Copy this folder to `~/.codex/skills/mobile-screen-video-reader`.
-- Run `python3 scripts/mobile_screen_video_reader.py <video path> ...` in that
-  folder when needed.
+- Then `/mobile-screen-video-reader` will be available as a skill entry.
+- For everyone, use frame-only mode first:
+  `mobile-screen-video-reader <video path> --frames-only --max-frames 12`
+- `frame_review_prompt.md`はフレームの絶対パス一覧と、モデルがそのまま画像を参照して要約する最終指示です。
 
 `SKILL.md` and `agents/openai.yaml` are included for skill metadata.
 
