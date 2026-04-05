@@ -67,6 +67,26 @@ python -m pip install -q twine
 python -m twine upload -u __token__ -p "$TWINE_API_TOKEN" dist/*
 ```
 
+### Trusted publishing setup
+
+The default `Release` workflow uses [PyPI trusted publishing](https://docs.pypi.org/trusted-publishers/) for
+`pypa/gh-action-pypi-publish@release/v1`.
+
+If publishing fails on `trusted-publisher` errors, configure a trusted publisher in PyPI first:
+
+- Account: `hk-882355`
+- Repository: `mobile-screen-video-reader`
+- Workflow file: `.github/workflows/release.yml`
+- Environment: not required (the current job does not use one)
+
+Then rerun:
+
+```bash
+gh workflow run Release --ref main --field publish=true
+```
+
+or push a new `v*` tag to trigger the same path automatically.
+
 ### Available options
 
 ```text
