@@ -11,10 +11,10 @@ Claude/Codex workflows.
   (`interval`) sampling
 - Extract scene-change frames (`scene`) for rough activity summary
 - Add UI-diff mode (`diff`) to focus on likely UI transition points
-- Add imitation mode (`mimic`) as a default preset for "I want to re-create this flow"
+- Add sequence-focused mode (`mimic`) for ordered, review-friendly extraction
 - In `mimic` mode, also export:
   - `flow.jsonl` (ordered timeline for quick sequence reading)
-  - `codex_mimic_prompt.md` (ready-to-use prompt template for imitation)
+  - `codex_review_prompt.md` (ready-to-use review prompt template)
 - Generate:
   - `manifest.json` (metadata + extracted frame list)
   - `frames.jsonl` (line-based frame index)
@@ -54,7 +54,7 @@ usage: mobile-screen-video-reader [video] [--output-dir OUTPUT_DIR]
   [--transcribe] [--keep-audio] [--model MODEL] [--lang LANG]
 ```
 
-### Imitation preset
+### Sequence reading preset
 
 ```bash
 mobile-screen-video-reader \
@@ -63,9 +63,9 @@ mobile-screen-video-reader \
   --mode mimic
 ```
 
-`mimic` uses the `diff` pipeline with preset-friendly defaults for fast flow-first review.
+`mimic` uses the `diff` pipeline with preset-friendly defaults for ordered flow review.
 
-### Recommended for copy flow
+### Recommended for sequence review
 
 ```bash
 OUT_DIR=./output
@@ -75,15 +75,14 @@ mobile-screen-video-reader \
   --output-dir "$OUT_DIR" \
   --mode mimic \
   --max-duration 600 \
-  --mimic-prompt replay_prompt.md
+  --mimic-prompt review_timeline_prompt.md
 
-echo "この動画のUIフローを再現してください"
-echo "ファイル: ${OUT_DIR}/"
+echo "この画面録画のフレームとタイムラインをAIに渡して要約してください"
 ```
 
 Suggested next step:
 - Attach generated files under `${OUT_DIR}/<run-folder>/` into Claude/Codex context
-- Start with `${OUT_DIR}/.../replay_prompt.md` then continue with `frames/` files and `flow.jsonl`
+- Start with `${OUT_DIR}/.../review_timeline_prompt.md`, then reference `frames/` and `flow.jsonl`
 
 ## Example output
 
@@ -97,7 +96,7 @@ output/
     manifest.json
     frames.jsonl
     flow.jsonl (mimic mode)
-    codex_mimic_prompt.md (mimic mode)
+    codex_review_prompt.md (mimic mode)
     report.md
     transcript.json (if --transcribe enabled and key present)
 ```

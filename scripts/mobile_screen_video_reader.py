@@ -128,8 +128,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mimic-prompt",
-        default="codex_mimic_prompt.md",
-        help="Mimic mode prompt output filename (written under output folder)",
+        default="codex_review_prompt.md",
+        help="Sequence mode prompt output filename (written under output folder)",
     )
     return parser.parse_args()
 
@@ -186,7 +186,7 @@ def ffprobe_video_metadata(path: Path) -> Dict[str, Any]:
 def resolve_mimic_prompt_path(output_dir: Path, prompt_name: str) -> Path:
     prompt_path = Path(prompt_name)
     if prompt_path.is_absolute() or ".." in prompt_path.parts:
-        raise ValueError("mimic prompt path must be a file name relative to the output folder")
+        raise ValueError("prompt path must be a file name relative to the output folder")
     if not prompt_path.suffix:
         prompt_path = prompt_path.with_suffix(".md")
     return output_dir / prompt_path
@@ -501,18 +501,18 @@ def build_flow_rows(frame_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 def build_mimic_prompt(video_path: Path, flow_rows: List[Dict[str, Any]]) -> str:
     lines = [
-        "# App Imitation Prompt",
+        "# Screen Sequence Review Prompt",
         "",
         f"Source video: `{video_path.name}`",
         "",
         "Goal:",
-        "- Reconstruct the app flow as close as possible from the attached frame sequence.",
+        "- Summarize visible UI/state transitions from the attached frame sequence.",
         "",
         "Instructions:",
         "- Start from the first frame and process rows in order.",
         "- For each frame, describe visible components, navigation transitions, and likely user actions.",
         "- Infer state transitions, validation states, and edge cases where visible.",
-        "- Propose a minimal implementation plan and a follow-up implementation sketch in the target stack.",
+        "- Summarize probable behavior and implementation constraints for quick handoff.",
         "",
         "Attached files:",
         "- `manifest.json`",
@@ -528,7 +528,7 @@ def build_mimic_prompt(video_path: Path, flow_rows: List[Dict[str, Any]]) -> str
     if len(flow_rows) > 80:
         lines.append(f"... ({len(flow_rows) - 80} more steps omitted)")
     lines.append("")
-    lines.append("If uncertain, please state assumptions explicitly and produce the UI map first, then implementation details.")
+    lines.append("If uncertain, please state assumptions explicitly before making any implementation decisions.")
     return "\n".join(lines) + "\n"
 
 

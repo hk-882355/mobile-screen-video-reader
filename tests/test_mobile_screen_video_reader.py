@@ -103,7 +103,7 @@ class TestMobileScreenVideoReader(unittest.TestCase):
                 {"step": 2, "image": "frame_000002.jpg", "timestamp_sec": 1.5},
             ],
         )
-        self.assertIn("# App Imitation Prompt", prompt)
+        self.assertIn("# Screen Sequence Review Prompt", prompt)
         self.assertIn("Source video: `sample.mp4`", prompt)
         self.assertIn("flow.jsonl", prompt)
         self.assertIn("timeline", prompt.lower())
