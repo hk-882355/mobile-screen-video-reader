@@ -4,15 +4,32 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-screen-video-reader"
-version = "0.1.8"
+version = "0.1.9"
 description = "Extract frames from mobile screen recordings for AI review"
+authors = [{ name = "hk-882355" }]
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.10"
-license = "MIT"
+keywords = ["video", "ffmpeg", "ai", "screen recording", "frame extraction", "codex", "claude"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
 dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/hk-882355/mobile-screen-video-reader"
+Repository = "https://github.com/hk-882355/mobile-screen-video-reader"
+Issues = "https://github.com/hk-882355/mobile-screen-video-reader/issues"
+Changelog = "https://github.com/hk-882355/mobile-screen-video-reader/blob/main/CHANGELOG.md"
 
 [project.scripts]
 mobile-screen-video-reader = "mobile_screen_video_reader.cli:main"

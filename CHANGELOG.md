@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.1.9
+
+- Update `frame_review_prompt.md` to instruct the user model to read absolute frame paths directly after skill completion, removing manual path re-submit friction.
+
 # 0.1.8
 
 - Improve PyPI manual-release guidance in README to match workflow secret naming (`PYPI_API_TOKEN`)
