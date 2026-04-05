@@ -36,9 +36,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=("every", "interval", "scene", "diff"),
+        choices=("every", "interval", "scene", "diff", "mimic"),
         default="every",
-        help="every: fixed fps, interval: fixed seconds, scene/diff: scene change based",
+        help="every: fixed fps, interval: fixed seconds, scene/diff/mimic: change-based",
     )
     parser.add_argument(
         "--fps",
@@ -62,13 +62,13 @@ def parse_args() -> argparse.Namespace:
         "--diff-threshold",
         type=float,
         default=0.06,
-        help="UI-diff sensitivity when mode=diff (higher is less sensitive)",
+        help="UI-diff sensitivity when mode=diff/mimic (higher is less sensitive)",
     )
     parser.add_argument(
         "--diff-interval",
         type=float,
         default=0.5,
-        help="Sampling interval in seconds before diff filtering. Only for mode=diff",
+        help="Sampling interval in seconds before diff filtering. Used for mode=diff and mimic",
     )
     parser.add_argument(
         "--max-width",
@@ -200,7 +200,7 @@ def timestamp_list(metadata: Dict[str, Any], mode: str, args: argparse.Namespace
         interval = max(args.interval, 0.1)
         count = int(duration / interval) + 1
         return [round(i * interval, 3) for i in range(count)]
-    if mode == "diff":
+    if mode in ("diff", "mimic"):
         interval = max(0.1, args.diff_interval)
         count = int(duration / interval) + 1
         return [round(i * interval, 3) for i in range(count)]
@@ -321,7 +321,7 @@ def write_artifacts(
             "file": str(frame.relative_to(output_dir)),
             "frame": frame.name,
         }
-        if args.mode in ("every", "interval", "diff"):
+        if args.mode in ("every", "interval", "diff", "mimic"):
             row["timestamp_sec"] = next(ts_iter, None)
         frame_rows.append(row)
 
@@ -367,6 +367,24 @@ def write_artifacts(
         transcript_path.write_text(json.dumps(transcript, ensure_ascii=False, indent=2), encoding="utf-8")
     else:
         manifest["transcript"]["status"] = "skipped"
+
+    if args.mode == "mimic":
+        flow_path = output_dir / "flow.jsonl"
+        flow_rows = build_flow_rows(frame_rows)
+        flow_path.write_text(
+            "\n".join(json.dumps(row, ensure_ascii=False) for row in flow_rows),
+            encoding="utf-8",
+        )
+        manifest["mimic"] = {
+            "flow_path": "flow.jsonl",
+            "prompt_path": "codex_mimic_prompt.md",
+        }
+
+        prompt_path = output_dir / "codex_mimic_prompt.md"
+        prompt_path.write_text(
+            build_mimic_prompt(video_path=video_path, flow_rows=flow_rows),
+            encoding="utf-8",
+        )
 
     manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -415,6 +433,57 @@ def write_artifacts(
     return manifest
 
 
+def build_flow_rows(frame_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    flow: List[Dict[str, Any]] = []
+    prev_ts: Optional[float] = None
+    for row in frame_rows:
+        ts = row.get("timestamp_sec")
+        item: Dict[str, Any] = {
+            "step": row["index"],
+            "image": f"frames/{row['frame']}",
+            "timestamp_sec": ts,
+        }
+        if prev_ts is not None and ts is not None:
+            item["delta_sec"] = round(ts - prev_ts, 3)
+        flow.append(item)
+        if ts is not None:
+            prev_ts = ts
+    return flow
+
+
+def build_mimic_prompt(video_path: Path, flow_rows: List[Dict[str, Any]]) -> str:
+    lines = [
+        "# App Imitation Prompt",
+        "",
+        f"Source video: `{video_path.name}`",
+        "",
+        "Goal:",
+        "- Reconstruct the app flow as close as possible from the attached frame sequence.",
+        "",
+        "Instructions:",
+        "- Start from the first frame and process rows in order.",
+        "- For each frame, describe visible components, navigation transitions, and likely user actions.",
+        "- Infer state transitions, validation states, and edge cases where visible.",
+        "- Propose a minimal implementation plan and a follow-up implementation sketch in the target stack.",
+        "",
+        "Attached files:",
+        "- `manifest.json`",
+        "- `flow.jsonl`",
+        "- `frames/frame_*.jpg` (or `png` depending on mode)",
+        "",
+        "Timeline:",
+    ]
+    for row in flow_rows[:80]:
+        ts = "" if row.get("timestamp_sec") is None else f'{row["timestamp_sec"]}s'
+        lines.append(f"- step={row['step']} image={row['image']} t={ts}")
+
+    if len(flow_rows) > 80:
+        lines.append(f"... ({len(flow_rows) - 80} more steps omitted)")
+    lines.append("")
+    lines.append("If uncertain, please state assumptions explicitly and produce the UI map first, then implementation details.")
+    return "\n".join(lines) + "\n"
+
+
 def main() -> int:
     args = parse_args()
     require_command("ffmpeg")
@@ -431,7 +500,7 @@ def main() -> int:
     metadata = ffprobe_video_metadata(video_path)
 
     frames = extract_frames(video_path, output_dir, args)
-    timestamps = list(timestamp_list(metadata, args.mode, args)) if args.mode in ("every", "interval", "diff") else []
+    timestamps = list(timestamp_list(metadata, args.mode, args)) if args.mode in ("every", "interval", "diff", "mimic") else []
 
     transcript = None
     audio_path = None

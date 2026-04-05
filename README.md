@@ -11,6 +11,10 @@ Claude/Codex workflows.
   (`interval`) sampling
 - Extract scene-change frames (`scene`) for rough activity summary
 - Add UI-diff mode (`diff`) to focus on likely UI transition points
+- Add imitation mode (`mimic`) as a default preset for "I want to re-create this flow"
+- In `mimic` mode, also export:
+  - `flow.jsonl` (ordered timeline for quick sequence reading)
+  - `codex_mimic_prompt.md` (ready-to-use prompt template for imitation)
 - Generate:
   - `manifest.json` (metadata + extracted frame list)
   - `frames.jsonl` (line-based frame index)
@@ -43,12 +47,23 @@ mobile-screen-video-reader \
 
 ```text
 usage: mobile-screen-video-reader [video] [--output-dir OUTPUT_DIR]
-  [--mode {every,interval,scene,diff}] [--fps FPS] [--interval INTERVAL]
+  [--mode {every,interval,scene,diff,mimic}] [--fps FPS] [--interval INTERVAL]
   [--scene-threshold SCENE_THRESHOLD] [--diff-threshold DIFF_THRESHOLD]
   [--diff-interval DIFF_INTERVAL] [--max-width MAX_WIDTH]
   [--max-frames MAX_FRAMES] [--image-format {jpg,png}] [--quality QUALITY]
   [--transcribe] [--keep-audio] [--model MODEL] [--lang LANG]
 ```
+
+### Imitation preset
+
+```bash
+mobile-screen-video-reader \
+  /path/to/screen-recording.mp4 \
+  --output-dir ./output \
+  --mode mimic
+```
+
+`mimic` uses the `diff` pipeline with preset-friendly defaults for fast flow-first review.
 
 ## Example output
 
@@ -61,6 +76,8 @@ output/
       ...
     manifest.json
     frames.jsonl
+    flow.jsonl (mimic mode)
+    codex_mimic_prompt.md (mimic mode)
     report.md
     transcript.json (if --transcribe enabled and key present)
 ```
