@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mobile-screen-video-reader"
-version = "0.1.4"
+version = "0.1.5"
 description = "Extract frames from mobile screen recordings for AI review"
 readme = "README.md"
 requires-python = ">=3.10"
