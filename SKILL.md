@@ -9,11 +9,11 @@ description: "Convert smartphone screen-recording videos into keyframes and opti
 
 - Convert one video file to still frames.
 - Keep outputs stable and easy for AI context:
-  - `manifest.json`
+- `manifest.json`
   - `frames.jsonl`
   - `report.md`
-  - `flow.jsonl` (mimic mode)
-  - `codex_review_prompt.md` (or custom name via `--mimic-prompt`)
+  - `flow.jsonl` (sequence review mode)
+  - `codex_review_prompt.md` (or custom name via `--review-prompt`)
   - `transcript.json` (only when transcription is enabled)
 
 ## Triggering
@@ -38,7 +38,7 @@ recorded video frame-by-frame.
 6. If transcription is requested, extract audio and call OpenAI Audio API if
    `OPENAI_API_KEY` is available.
 7. Optional: set `--max-duration` to guard against accidentally long recordings.
-8. Optional: set `--mimic-prompt` to customize the generated prompt filename.
+8. Optional: set `--review-prompt` (or legacy `--mimic-prompt`) to customize the generated prompt filename.
 
 ## Workflow
 
@@ -64,3 +64,6 @@ python3 scripts/mobile_screen_video_reader.py \
   seconds is enough.
 - Prefer `--mode mimic` when maintaining chronological frame order is important.
 - Guard against too-long videos with `--max-duration` when batch ingesting.
+
+The CLI now prefers `--review-prompt`; `--mimic-prompt` is retained for
+compatibility.

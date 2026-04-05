@@ -49,9 +49,11 @@ mobile-screen-video-reader \
 usage: mobile-screen-video-reader [video] [--output-dir OUTPUT_DIR]
   [--mode {every,interval,scene,diff,mimic}] [--fps FPS] [--interval INTERVAL]
   [--scene-threshold SCENE_THRESHOLD] [--diff-threshold DIFF_THRESHOLD]
-  [--diff-interval DIFF_INTERVAL] [--max-width MAX_WIDTH]
+  [--diff-interval DIFF_INTERVAL] [--max-duration MAX_DURATION]
+  [--min-duration MIN_DURATION] [--max-width MAX_WIDTH]
   [--max-frames MAX_FRAMES] [--image-format {jpg,png}] [--quality QUALITY]
   [--transcribe] [--keep-audio] [--model MODEL] [--lang LANG]
+  [--review-prompt REVIEW_PROMPT] [--mimic-prompt MIMIC_PROMPT]
 ```
 
 ### Sequence reading preset
@@ -75,10 +77,13 @@ mobile-screen-video-reader \
   --output-dir "$OUT_DIR" \
   --mode mimic \
   --max-duration 600 \
-  --mimic-prompt review_timeline_prompt.md
+  --review-prompt review_timeline_prompt.md
 
 echo "この画面録画のフレームとタイムラインをAIに渡して要約してください"
 ```
+
+`--mimic-prompt` is kept for backward compatibility and maps to
+`--review-prompt`.
 
 Suggested next step:
 - Attach generated files under `${OUT_DIR}/<run-folder>/` into Claude/Codex context

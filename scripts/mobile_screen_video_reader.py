@@ -127,9 +127,16 @@ def parse_args() -> argparse.Namespace:
         help="Optional language hint for transcription (e.g. ja)",
     )
     parser.add_argument(
-        "--mimic-prompt",
-        default="codex_review_prompt.md",
+        "--review-prompt",
+        dest="review_prompt",
+        default=None,
         help="Sequence mode prompt output filename (written under output folder)",
+    )
+    parser.add_argument(
+        "--mimic-prompt",
+        dest="mimic_prompt",
+        default=None,
+        help="Deprecated alias for --review-prompt.",
     )
     return parser.parse_args()
 
@@ -190,6 +197,21 @@ def resolve_mimic_prompt_path(output_dir: Path, prompt_name: str) -> Path:
     if not prompt_path.suffix:
         prompt_path = prompt_path.with_suffix(".md")
     return output_dir / prompt_path
+
+
+def resolve_review_prompt_name(args: argparse.Namespace) -> str:
+    default_name = "codex_review_prompt.md"
+
+    if args.review_prompt and args.mimic_prompt:
+        if args.review_prompt != args.mimic_prompt:
+            raise ValueError("Use either --review-prompt or --mimic-prompt, but not different values.")
+        return args.review_prompt
+
+    if args.review_prompt:
+        return args.review_prompt
+    if args.mimic_prompt:
+        return args.mimic_prompt
+    return default_name
 
 
 def validate_video_metadata(metadata: Dict[str, Any], args: argparse.Namespace) -> List[str]:
@@ -375,7 +397,7 @@ def write_artifacts(
 
     manifest = {
         "version": 1,
-        "created_at": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "created_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "video": {
             "path": str(video_path),
             "filename": video_path.name,
@@ -423,12 +445,15 @@ def write_artifacts(
             "\n".join(json.dumps(row, ensure_ascii=False) for row in flow_rows),
             encoding="utf-8",
         )
-        prompt_path = resolve_mimic_prompt_path(output_dir=output_dir, prompt_name=args.mimic_prompt)
+        prompt_name = resolve_review_prompt_name(args)
+        prompt_path = resolve_mimic_prompt_path(output_dir=output_dir, prompt_name=prompt_name)
         prompt_rel = str(prompt_path.relative_to(output_dir))
-        manifest["mimic"] = {
+        manifest["sequence_review"] = {
             "flow_path": "flow.jsonl",
             "prompt_path": prompt_rel,
         }
+        # Keep compatibility with previous manifest key
+        manifest["mimic"] = manifest["sequence_review"]
         prompt_path.write_text(
             build_mimic_prompt(video_path=video_path, flow_rows=flow_rows),
             encoding="utf-8",
@@ -546,6 +571,8 @@ def main() -> int:
 
     output_dir = build_output_dir(video_path, output_root)
     metadata = ffprobe_video_metadata(video_path)
+    if args.mimic_prompt and not args.review_prompt:
+        print("warning: --mimic-prompt is deprecated; use --review-prompt instead.")
     for warn in validate_video_metadata(metadata, args):
         print(f"warning: {warn}")
 

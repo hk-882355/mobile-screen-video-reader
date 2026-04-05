@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 from types import ModuleType
 import unittest
+import tempfile
 
 
 def load_script_module() -> ModuleType:
@@ -108,6 +109,51 @@ class TestMobileScreenVideoReader(unittest.TestCase):
         self.assertIn("flow.jsonl", prompt)
         self.assertIn("timeline", prompt.lower())
 
+    def test_resolve_review_prompt_name_default(self) -> None:
+        args = type(
+            "Args",
+            (),
+            {
+                "review_prompt": None,
+                "mimic_prompt": None,
+            },
+        )()
+        self.assertEqual(module.resolve_review_prompt_name(args), "codex_review_prompt.md")
+
+    def test_resolve_review_prompt_name_review_only(self) -> None:
+        args = type(
+            "Args",
+            (),
+            {
+                "review_prompt": "review_timeline.md",
+                "mimic_prompt": None,
+            },
+        )()
+        self.assertEqual(module.resolve_review_prompt_name(args), "review_timeline.md")
+
+    def test_resolve_review_prompt_name_legacy_only(self) -> None:
+        args = type(
+            "Args",
+            (),
+            {
+                "review_prompt": None,
+                "mimic_prompt": "legacy_timeline.md",
+            },
+        )()
+        self.assertEqual(module.resolve_review_prompt_name(args), "legacy_timeline.md")
+
+    def test_resolve_review_prompt_name_conflict(self) -> None:
+        args = type(
+            "Args",
+            (),
+            {
+                "review_prompt": "a.md",
+                "mimic_prompt": "b.md",
+            },
+        )()
+        with self.assertRaises(ValueError):
+            module.resolve_review_prompt_name(args)
+
     def test_resolve_mimic_prompt_path(self) -> None:
         output_dir = Path("/tmp/out")
         out = module.resolve_mimic_prompt_path(output_dir=output_dir, prompt_name="ui_replay_prompt.md")
@@ -117,6 +163,54 @@ class TestMobileScreenVideoReader(unittest.TestCase):
         output_dir = Path("/tmp/out")
         with self.assertRaises(ValueError):
             module.resolve_mimic_prompt_path(output_dir=output_dir, prompt_name="../evil.md")
+
+    def test_write_artifacts_sequence_review_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "run"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            frame_dir = output_dir / "frames"
+            frame_dir.mkdir()
+            frame1 = frame_dir / "frame_000001.jpg"
+            frame2 = frame_dir / "frame_000002.jpg"
+            frame1.write_text("f1")
+            frame2.write_text("f2")
+
+            args = type(
+                "Args",
+                (),
+                {
+                    "mode": "mimic",
+                    "review_prompt": "custom_review.md",
+                    "mimic_prompt": None,
+                    "image_format": "jpg",
+                    "fps": 1.0,
+                    "interval": 2.0,
+                    "scene_threshold": 0.04,
+                    "diff_threshold": 0.06,
+                    "diff_interval": 0.5,
+                    "max_width": 768,
+                    "max_frames": 0,
+                    "quality": 2,
+                    "transcribe": False,
+                    "model": "gpt-4o-mini-transcribe",
+                    "lang": None,
+                },
+            )()
+
+            manifest = module.write_artifacts(
+                output_dir=output_dir,
+                video_path=Path("/tmp/sample.mp4"),
+                metadata={"duration": 10.0, "width": 1080, "height": 1920, "fps": 30.0},
+                frames=[frame1, frame2],
+                args=args,
+                timestamps=[0.0, 1.0],
+                transcript=None,
+            )
+
+            self.assertIn("sequence_review", manifest)
+            self.assertIn("mimic", manifest)
+            self.assertEqual(manifest["sequence_review"], manifest["mimic"])
+            self.assertEqual(manifest["sequence_review"]["prompt_path"], "custom_review.md")
 
     def test_validate_video_metadata(self) -> None:
         metadata = {"duration": 90.0, "width": 1080, "height": 1920}
