@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mobile Screen Video Reader"
+  short_description: "Extract keyframes from screen recordings and create review-ready manifests."
+  icon_small: "./assets/mobile-screen-video-reader-small.svg"
+  icon_large: "./assets/mobile-screen-video-reader.png"
+  default_prompt: "Convert the uploaded recording to frames and generate a review package."
