@@ -78,7 +78,11 @@ If publishing fails on `trusted-publisher` errors, configure a trusted publisher
 - Account: `hk-882355`
 - Repository: `mobile-screen-video-reader`
 - Workflow file: `.github/workflows/release.yml`
+- Workflow name: `Release`
 - Environment: not required (the current job does not use one)
+- Allowed references:
+  - `refs/heads/main` (manual dispatch path / main branch)
+  - `refs/tags/v*` (tag push path, currently used for releases)
 
 Then rerun:
 
@@ -89,6 +93,13 @@ gh workflow run Release --ref main --field publish=true
 For manual dispatch publishing, pass `publish=true` explicitly.
 
 or push a new `v*` tag to trigger the same path automatically.
+
+If you still see `invalid-publisher`:
+
+1. Check that the repository owner, repo name, workflow file, and workflow name
+   exactly match the values shown in the `trusted publishing exchange` error log.
+2. Run on `main` once first with `publish=true`.
+3. If that succeeds, tag-based publishes (`v*` tags) should work as well.
 
 ### Available options
 
