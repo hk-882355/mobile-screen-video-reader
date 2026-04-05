@@ -43,12 +43,34 @@ jobs:
         run: |
           python -m twine check dist/*
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI (trusted)
+        id: publish_trusted
+        continue-on-error: true
         if: ${{ github.event_name == 'push' || github.event.inputs.publish == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
 
+      - name: Publish to PyPI (API token fallback)
+        id: publish_api
+        if: ${{ (github.event_name == 'push' || github.event.inputs.publish == 'true') && steps.publish_trusted.outcome == 'failure' && secrets.PYPI_API_TOKEN != '' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m twine upload --non-interactive dist/*
+
+      - name: Publish to PyPI (failed)
+        if: ${{ (github.event_name == 'push' || github.event.inputs.publish == 'true') && steps.publish_trusted.outcome != 'success' && steps.publish_api.outcome != 'success' }}
+        run: |
+          echo "PyPI publish failed and fallback credentials are not configured."
+          echo "Set PYPI_API_TOKEN in repository secrets, or configure trusted publishing in PyPI."
+          exit 1
+
       - name: Publish release assets
-        if: ${{ github.event_name == 'push' || github.event.inputs.publish == 'true' }}
+        if: |
+          ${{
+            (github.event_name == 'push' || github.event.inputs.publish == 'true') &&
+            (steps.publish_trusted.outcome == 'success' || steps.publish_api.outcome == 'success')
+          }}
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
